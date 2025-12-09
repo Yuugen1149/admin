@@ -121,5 +121,34 @@ export const db = {
                 .eq('email', email);
             if (error) console.error('Error updating last seen:', error);
         }
+    },
+    announcements: {
+        findAll: async (): Promise<any[]> => {
+            const { data, error } = await supabase
+                .from('announcements')
+                .select('*')
+                .order('created_at', { ascending: false });
+            if (error) {
+                console.error('Error fetching announcements:', error);
+                return [];
+            }
+            return data || [];
+        },
+        create: async (announcementData: any): Promise<any> => {
+            const { data, error } = await supabase
+                .from('announcements')
+                .insert([announcementData])
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        },
+        delete: async (id: number): Promise<void> => {
+            const { error } = await supabase
+                .from('announcements')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
+        }
     }
 };

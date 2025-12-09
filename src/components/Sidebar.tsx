@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Calendar, FileText, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, FileText, Settings, LogOut, Megaphone } from "lucide-react";
 import clsx from "clsx";
 
 const navItems = [
     { name: "Dashboard", href: "/", icon: LayoutDashboard },
     { name: "Members", href: "/members", icon: Users },
     { name: "Events", href: "/events", icon: Calendar },
+    { name: "Announcements", href: "/announcements", icon: Megaphone },
     { name: "Reports", href: "/reports", icon: FileText },
     { name: "Settings", href: "/settings", icon: Settings },
 ];

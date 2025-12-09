@@ -118,10 +118,10 @@ export default function Home() {
               <Calendar size={20} className="text-text-secondary" />
               Create Event
             </Link>
-            <button className="flex items-center gap-3 p-4 border border-border rounded-xl bg-surface hover:bg-background hover:border-primary transition-all text-text-primary font-medium cursor-pointer">
+            <Link href="/announcements" className="flex items-center gap-3 p-4 border border-border rounded-xl bg-surface hover:bg-background hover:border-primary transition-all text-text-primary font-medium cursor-pointer">
               <Send size={20} className="text-text-secondary" />
               Send Announcement
-            </button>
+            </Link>
             <Link href="/reports" className="flex items-center gap-3 p-4 border border-border rounded-xl bg-surface hover:bg-background hover:border-primary transition-all text-text-primary font-medium cursor-pointer">
               <FileText size={20} className="text-text-secondary" />
               Generate Report
