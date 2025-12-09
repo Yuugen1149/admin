@@ -24,6 +24,7 @@ ts-debug.log*
 
 # local env files
 .env*.local
+.env
 
 # vercel
 .vercel
@@ -31,3 +32,17 @@ ts-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# logs
+build_log.txt
+npm-debug.log
+yarn-debug.log*
+*.log
+
+# data and uploads
+data/
+uploads/
+sessions/
+
+# old backend references (can be removed if not needed)
+backend/
