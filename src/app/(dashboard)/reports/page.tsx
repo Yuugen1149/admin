@@ -4,8 +4,8 @@ import { db } from "@/lib/db";
 import { FileIcon, Download, Trash2, Search, Filter } from "lucide-react";
 
 // Server Component
-export default function ReportsPage() {
-    const files = db.files.findAll();
+export default async function ReportsPage() {
+    const files = await db.files.findAll();
 
     return (
         <div className="p-8">
