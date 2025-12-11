@@ -55,6 +55,13 @@ export const db = {
                 .single();
             if (error) throw error;
             return data;
+        },
+        delete: async (id: number): Promise<void> => {
+            const { error } = await supabase
+                .from('events')
+                .delete()
+                .eq('id', id);
+            if (error) throw error;
         }
     },
     members: {

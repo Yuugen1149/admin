@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Plus, MapPin, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, MapPin, Clock, Trash2 } from "lucide-react";
 import clsx from "clsx";
 import useSWR from "swr";
 import { EventModal } from "@/components/EventModal";
@@ -16,15 +16,29 @@ interface CalendarEvent {
     description: string;
 }
 
+interface User {
+    name: string;
+    role: string;
+}
+
 export default function EventsPage() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [userRole, setUserRole] = useState<string>("");
 
     const { data: events, mutate } = useSWR<CalendarEvent[]>('/api/events', fetcher);
+    const { data: user } = useSWR<User>('/api/user', fetcher);
 
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+
+    // Update user role when user data is fetched
+    useEffect(() => {
+        if (user?.role) {
+            setUserRole(user.role);
+        }
+    }, [user]);
 
     const handlePrevMonth = () => {
         setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -54,6 +68,29 @@ export default function EventsPage() {
             setIsModalOpen(false);
         } catch (e) {
             alert("Failed to create event");
+        }
+    };
+
+    const handleDeleteEvent = async (eventId: number, e: React.MouseEvent) => {
+        e.stopPropagation(); // Prevent triggering date click
+
+        if (!confirm('Are you sure you want to delete this event?')) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/events/${eventId}`, {
+                method: 'DELETE',
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to delete event');
+            }
+
+            mutate(); // Refresh events list
+        } catch (error: any) {
+            alert(error.message);
         }
     };
 
@@ -91,16 +128,32 @@ export default function EventsPage() {
                     </div>
 
                     <div className="space-y-1 overflow-y-auto max-h-[80px] custom-scrollbar">
-                        {dayEvents.map(event => (
-                            <div key={event.id} className={clsx(
-                                "text-xs px-2 py-1 rounded-md mb-1 truncate font-medium",
-                                event.type === 'meeting' ? "bg-blue-100 text-blue-700" :
-                                    event.type === 'deadline' ? "bg-red-100 text-red-700" :
-                                        "bg-green-100 text-green-700"
-                            )}>
-                                {event.title}
-                            </div>
-                        ))}
+                        {dayEvents.map(event => {
+                            const canDelete = userRole === 'Chair' || userRole === 'Vice Chair';
+
+                            return (
+                                <div
+                                    key={event.id}
+                                    className={clsx(
+                                        "text-xs px-2 py-1 rounded-md mb-1 font-medium flex items-center justify-between group/event",
+                                        event.type === 'meeting' ? "bg-blue-100 text-blue-700" :
+                                            event.type === 'deadline' ? "bg-red-100 text-red-700" :
+                                                "bg-green-100 text-green-700"
+                                    )}
+                                >
+                                    <span className="truncate flex-1">{event.title}</span>
+                                    {canDelete && (
+                                        <button
+                                            onClick={(e) => handleDeleteEvent(event.id, e)}
+                                            className="ml-1 p-0.5 hover:bg-red-500 hover:text-white rounded opacity-0 group-hover/event:opacity-100 transition-opacity flex-shrink-0"
+                                            title="Delete event"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
 
                     <button className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 p-1 bg-primary text-white rounded-md shadow-sm transition-opacity">

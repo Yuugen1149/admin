@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { ShaderAnimation } from "@/components/ui/shader-lines";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -43,7 +44,10 @@ export default function LoginPage() {
         <div className="min-h-screen grid lg:grid-cols-2">
             {/* Left Side - Visual */}
             <div className="hidden lg:flex flex-col justify-center items-center bg-primary p-12 text-white relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-indigo-800 opacity-90" />
+                {/* Shader Animation Background */}
+                <ShaderAnimation />
+
+                {/* Content overlay */}
                 <div className="relative z-10 max-w-md text-center">
                     <div className="w-24 h-24 bg-white/10 backdrop-blur-md rounded-3xl mx-auto mb-8 flex items-center justify-center">
                         <svg width="48" height="48" viewBox="0 0 64 64" fill="none">
