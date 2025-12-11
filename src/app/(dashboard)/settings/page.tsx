@@ -100,6 +100,8 @@ function PermissionsSection() {
     const [permissions, setPermissions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState('');
+    const [hasChanges, setHasChanges] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         // Get user role
@@ -132,7 +134,7 @@ function PermissionsSection() {
         }
     };
 
-    const handleToggle = async (action: string, role: string) => {
+    const handleToggle = (action: string, role: string) => {
         const currentPerm = permissions.find(p => p.action_key === action) || { action_key: action, allowed_roles: [] };
         const currentRoles = currentPerm.allowed_roles || [];
 
@@ -143,7 +145,7 @@ function PermissionsSection() {
             newRoles = [...currentRoles, role];
         }
 
-        // Optimistic update
+        // Local update only
         setPermissions(prev => {
             const existing = prev.find(p => p.action_key === action);
             if (existing) {
@@ -152,16 +154,27 @@ function PermissionsSection() {
                 return [...prev, { action_key: action, allowed_roles: newRoles }];
             }
         });
+        setHasChanges(true);
+    };
 
+    const handleSave = async () => {
+        setSaving(true);
         try {
-            await fetch('/api/settings/permissions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action_key: action, allowed_roles: newRoles })
-            });
+            // Save all permissions
+            await Promise.all(permissions.map(perm =>
+                fetch('/api/settings/permissions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action_key: perm.action_key, allowed_roles: perm.allowed_roles })
+                })
+            ));
+            setHasChanges(false);
+            // Optional: Show success toast or visual indicator
         } catch (error) {
-            console.error("Failed to update permission", error);
-            fetchPermissions(); // Revert on error
+            console.error("Failed to save permissions", error);
+            alert("Failed to save changes. Please try again.");
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -178,10 +191,21 @@ function PermissionsSection() {
 
     return (
         <section className="bg-surface p-6 rounded-2xl shadow-sm border border-border">
-            <h2 className="text-xl font-bold text-text-primary mb-6 flex items-center gap-2">
-                <Lock size={24} className="text-primary" />
-                Permissions & Roles
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
+                    <Lock size={24} className="text-primary" />
+                    Permissions & Roles
+                </h2>
+                {hasChanges && (
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                        {saving ? 'Saving...' : 'Save Changes'}
+                    </button>
+                )}
+            </div>
 
             {loading ? (
                 <div className="animate-pulse space-y-4">
@@ -209,8 +233,6 @@ function PermissionsSection() {
                                         <td className="px-4 py-3 font-medium text-text-primary">{action.label}</td>
                                         {ROLES.map(role => {
                                             const isAllowed = allowedRoles.includes(role);
-                                            // Chair always has permission typically, but let's make it configurable or locked checked
-                                            const isLocked = role === 'chair' && action.key !== 'delete_events'; // Example logic
 
                                             return (
                                                 <td key={role} className="px-4 py-3 text-center">
