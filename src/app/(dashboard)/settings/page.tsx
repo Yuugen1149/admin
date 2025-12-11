@@ -111,7 +111,7 @@ function PermissionsSection() {
         const role = decodeURIComponent(getCookie("user_role") || "").toLowerCase();
         setUserRole(role);
 
-        if (['chair', 'vice chair', 'admin'].includes(role)) {
+        if (role === 'chair') {
             fetchPermissions();
         } else {
             setLoading(false);
@@ -165,7 +165,7 @@ function PermissionsSection() {
         }
     };
 
-    if (!['chair', 'vice chair', 'admin'].includes(userRole)) return null;
+    if (userRole !== 'chair') return null;
 
     const ACTIONS = [
         { key: 'edit_metrics', label: 'Edit Dashboard Metrics' },
