@@ -25,8 +25,6 @@ export default function SettingsPage() {
             </header>
 
             <div className="space-y-8">
-                {/* Debug Info (Safe) */}
-                <RoleDebugBanner />
 
                 {/* Appearance Section */}
                 <section className="bg-surface p-6 rounded-2xl shadow-sm border border-border">
@@ -236,25 +234,4 @@ function PermissionsSection() {
     );
 }
 
-function RoleDebugBanner() {
-    const [debugInfo, setDebugInfo] = useState({ raw: '', normalized: '' });
-    const [visible, setVisible] = useState(false);
 
-    useEffect(() => {
-        const raw = decodeURIComponent(document.cookie.split('; ').find(row => row.startsWith('user_role='))?.split('=')[1] || '');
-        const normalized = raw.toLowerCase().trim();
-        setDebugInfo({ raw, normalized });
-        setVisible(true);
-    }, []);
-
-    if (!visible) return null;
-
-    return (
-        <div className="bg-yellow-100 border border-yellow-200 text-yellow-800 p-4 rounded-lg text-sm mb-6">
-            <p className="font-bold">Debug Info (Client-Side Only):</p>
-            <p>Raw Cookie: "{debugInfo.raw}"</p>
-            <p>Normalized: "{debugInfo.normalized}"</p>
-            <p>Is Chair?: {debugInfo.normalized === 'chair' ? 'YES' : 'NO'}</p>
-        </div>
-    );
-}

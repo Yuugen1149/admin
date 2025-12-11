@@ -99,8 +99,8 @@ export default function Home() {
     const normalize = (r: string) => r?.toLowerCase().trim() || '';
     const currentRole = normalize(user.role);
 
-    // Chair always has permission in this logic
-    if (currentRole === 'chair') return true;
+    // Chair and Admin always have permission in this logic
+    if (['chair', 'admin'].includes(currentRole)) return true;
 
     const perm = permissions.find(p => p.action_key === action);
     if (!perm) return false;
