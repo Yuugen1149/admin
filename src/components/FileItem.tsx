@@ -5,9 +5,10 @@ import { FileIcon, Download, Trash2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export function FileItem({ file }: { file: FileRecord }) {
+export function FileItem({ file, onDelete }: { file: FileRecord; onDelete?: () => void }) {
     const router = useRouter();
     const [deleting, setDeleting] = useState(false);
+    const [dragging, setDragging] = useState(false);
 
     const handleDelete = async () => {
         if (!confirm("Are you sure you want to delete this file?")) return;
@@ -17,6 +18,9 @@ export function FileItem({ file }: { file: FileRecord }) {
             const res = await fetch(`/api/files/${file.id}`, { method: 'DELETE' });
             if (res.ok) {
                 router.refresh();
+                if (onDelete) {
+                    onDelete();
+                }
             } else {
                 alert("Failed to delete file");
             }
@@ -27,8 +31,23 @@ export function FileItem({ file }: { file: FileRecord }) {
         }
     };
 
+    const handleDragStart = (e: React.DragEvent) => {
+        e.dataTransfer.setData('fileId', file.id.toString());
+        e.dataTransfer.effectAllowed = 'move';
+        setDragging(true);
+    };
+
+    const handleDragEnd = () => {
+        setDragging(false);
+    };
+
     return (
-        <div className="flex items-center gap-4 p-4 border-b border-border hover:bg-background transition-colors last:border-0 group">
+        <div
+            className={`flex items-center gap-4 p-4 border-b border-border hover:bg-background transition-colors last:border-0 group cursor-move ${dragging ? 'opacity-50' : ''}`}
+            draggable
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+        >
             <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-primary shrink-0">
                 <FileIcon size={20} />
             </div>

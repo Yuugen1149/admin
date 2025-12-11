@@ -39,3 +39,54 @@ export async function GET() {
 
     return NextResponse.json(enrichedMembers);
 }
+
+export async function POST(request: Request) {
+    try {
+        const body = await request.json();
+        const { name, email, phone, role, password } = body;
+
+        // RBAC Check
+        const cookieStore = await cookies();
+        const userRole = cookieStore.get("user_role")?.value?.toLowerCase() || "";
+        const authorizedRoles = ['chair', 'vice chair', 'secretary', 'admin'];
+
+        if (!authorizedRoles.includes(userRole)) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+        }
+
+        // Validate
+        if (!name || !email || !password || !role) {
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        // 1. Create User
+        // Note: Storing plain text password as per existing simple schema pattern.
+        const userData = {
+            name,
+            email,
+            password,
+            role,
+            created_at: new Date().toISOString()
+        };
+
+        await db.users.create(userData);
+
+        // 2. Create Member
+        const memberData = {
+            name,
+            email,
+            phone,
+            status: 'active',
+            joined_date: new Date().toISOString().split('T')[0],
+            created_at: new Date().toISOString()
+        };
+
+        const newMember = await db.members.create(memberData);
+
+        return NextResponse.json(newMember);
+
+    } catch (error: any) {
+        console.error('Error creating member:', error);
+        return NextResponse.json({ error: error.message || 'Failed to create member' }, { status: 500 });
+    }
+}

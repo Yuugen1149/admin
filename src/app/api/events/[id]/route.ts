@@ -10,10 +10,10 @@ export async function DELETE(
         const cookieStore = await cookies();
         const userRole = cookieStore.get("user_role")?.value;
 
-        // Only Chair and Vice Chair can delete events
-        if (userRole !== 'Chair' && userRole !== 'Vice Chair') {
+        // Only Chair, Vice Chair, and Admin can delete events
+        if (userRole !== 'Chair' && userRole !== 'Vice Chair' && userRole !== 'Admin') {
             return NextResponse.json(
-                { error: 'Unauthorized. Only Chair and Vice Chair can delete events.' },
+                { error: 'Unauthorized. Only Chair, Vice Chair, and Admin can delete events.' },
                 { status: 403 }
             );
         }

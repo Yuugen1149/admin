@@ -1,4 +1,4 @@
-import { Sidebar } from "@/components/Sidebar";
+import { NavigationDock } from "@/components/NavigationDock";
 import { cookies } from "next/headers";
 
 export default async function DashboardLayout({
@@ -13,9 +13,9 @@ export default async function DashboardLayout({
     };
 
     return (
-        <div className="flex min-h-screen">
-            <Sidebar user={user} />
-            <main className="flex-1 ml-[280px]">
+        <div className="min-h-screen bg-background pb-32">
+            <NavigationDock user={user} />
+            <main className="container mx-auto">
                 {children}
             </main>
         </div>

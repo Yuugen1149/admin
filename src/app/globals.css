@@ -7,6 +7,9 @@
 
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
 
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
@@ -31,6 +34,9 @@
 
   --background: #F8FAFC;
   --surface: #FFFFFF;
+  --foreground: #0F172A;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
 
   --text-primary: #0F172A;
   --text-secondary: #64748B;
@@ -43,6 +49,9 @@
 .dark {
   --background: #0F172A;
   --surface: #1E293B;
+  --foreground: #F1F5F9;
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
 
   --text-primary: #F1F5F9;
   --text-secondary: #CBD5E1;

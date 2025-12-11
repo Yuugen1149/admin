@@ -3,6 +3,28 @@ import { db } from '@/lib/db';
 import { unlink } from 'fs/promises';
 import path from 'path';
 
+export async function PUT(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id: idStr } = await params;
+        const id = parseInt(idStr);
+        const body = await request.json();
+        const { folder_id } = body;
+
+        if (isNaN(id)) {
+            return NextResponse.json({ error: 'Invalid file ID' }, { status: 400 });
+        }
+
+        const updatedFile = await db.files.update(id, { folder_id });
+        return NextResponse.json(updatedFile);
+    } catch (error) {
+        console.error('Error updating file:', error);
+        return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    }
+}
+
 export async function DELETE(
     request: Request,
     { params }: { params: Promise<{ id: string }> }

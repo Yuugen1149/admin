@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { UploadCloud, File as FileIcon, Trash2, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import clsx from "clsx";
 
-export function FileUploader() {
+export function FileUploader({ onUploadComplete }: { onUploadComplete?: () => void }) {
     const router = useRouter();
     const [dragActive, setDragActive] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -46,6 +46,10 @@ export function FileUploader() {
         setUploading(false);
         // Refresh server components to show new file
         router.refresh();
+        // Call callback if provided
+        if (onUploadComplete) {
+            onUploadComplete();
+        }
     };
 
     const uploadFile = async (file: File) => {

@@ -19,6 +19,7 @@ export default function MembersPage() {
     const [members, setMembers] = useState<Member[]>([]);
     const [selectedMember, setSelectedMember] = useState<Member | null>(null);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
         // Initial fetch
@@ -31,7 +32,7 @@ export default function MembersPage() {
 
             // Refresh list to see others' status
             fetchMembers();
-        }, 30000); // Every 30 seconds
+        }, 5000); // Every 5 seconds
 
         return () => clearInterval(interval);
     }, []);
@@ -47,6 +48,16 @@ export default function MembersPage() {
             setLoading(false);
         }
     }
+
+    // Filter members based on search query
+    const filteredMembers = members.filter(member => {
+        if (!searchQuery.trim()) return true;
+        const query = searchQuery.toLowerCase();
+        return (
+            member.name.toLowerCase().includes(query) ||
+            member.role.toLowerCase().includes(query)
+        );
+    });
 
     return (
         <div className="p-8 relative">
@@ -65,6 +76,8 @@ export default function MembersPage() {
                     <input
                         type="text"
                         placeholder="Search by name or role..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-surface focus:border-primary focus:outline-none"
                     />
                 </div>
@@ -78,7 +91,7 @@ export default function MembersPage() {
                 <div className="text-center py-20 text-text-tertiary">Loading members...</div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {members.map((member) => (
+                    {filteredMembers.map((member) => (
                         <div key={member.id} className="bg-surface p-6 rounded-2xl shadow-sm border border-border hover:shadow-md transition-shadow group relative">
                             <div className="absolute top-4 right-4 text-text-tertiary cursor-pointer hover:text-text-primary">
                                 <MoreVertical size={20} />
@@ -86,7 +99,14 @@ export default function MembersPage() {
 
                             <div className="flex flex-col items-center text-center">
                                 <div className="relative mb-4">
-                                    <img src={member.avatar} alt={member.name} className="w-20 h-20 rounded-full bg-gray-100 object-cover" />
+                                    <img
+                                        src={member.avatar || `/images/members/${encodeURIComponent(member.name)}.jpg`}
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=random`;
+                                        }} alt={member.name}
+                                        className="w-20 h-20 rounded-full bg-gray-100 object-cover"
+                                    />
                                     <span className={clsx(
                                         "absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-white",
                                         member.status === 'active' ? 'bg-green-500' :

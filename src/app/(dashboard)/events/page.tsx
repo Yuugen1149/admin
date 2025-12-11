@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Plus, MapPin, Clock, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, MapPin, Clock, Trash2, Calendar } from "lucide-react";
 import clsx from "clsx";
 import useSWR from "swr";
 import { EventModal } from "@/components/EventModal";
@@ -128,32 +128,19 @@ export default function EventsPage() {
                     </div>
 
                     <div className="space-y-1 overflow-y-auto max-h-[80px] custom-scrollbar">
-                        {dayEvents.map(event => {
-                            const canDelete = userRole === 'Chair' || userRole === 'Vice Chair';
-
-                            return (
-                                <div
-                                    key={event.id}
-                                    className={clsx(
-                                        "text-xs px-2 py-1 rounded-md mb-1 font-medium flex items-center justify-between group/event",
-                                        event.type === 'meeting' ? "bg-blue-100 text-blue-700" :
-                                            event.type === 'deadline' ? "bg-red-100 text-red-700" :
-                                                "bg-green-100 text-green-700"
-                                    )}
-                                >
-                                    <span className="truncate flex-1">{event.title}</span>
-                                    {canDelete && (
-                                        <button
-                                            onClick={(e) => handleDeleteEvent(event.id, e)}
-                                            className="ml-1 p-0.5 hover:bg-red-500 hover:text-white rounded opacity-0 group-hover/event:opacity-100 transition-opacity flex-shrink-0"
-                                            title="Delete event"
-                                        >
-                                            <Trash2 size={12} />
-                                        </button>
-                                    )}
-                                </div>
-                            );
-                        })}
+                        {dayEvents.map(event => (
+                            <div
+                                key={event.id}
+                                className={clsx(
+                                    "text-xs px-2 py-1 rounded-md mb-1 font-medium truncate",
+                                    event.type === 'meeting' ? "bg-blue-100 text-blue-700" :
+                                        event.type === 'deadline' ? "bg-red-100 text-red-700" :
+                                            "bg-green-100 text-green-700"
+                                )}
+                            >
+                                {event.title}
+                            </div>
+                        ))}
                     </div>
 
                     <button className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 p-1 bg-primary text-white rounded-md shadow-sm transition-opacity">
@@ -210,6 +197,108 @@ export default function EventsPage() {
                 {/* Calendar Grid */}
                 <div className="grid grid-cols-7 flex-1 bg-background">
                     {renderCalendar()}
+                </div>
+            </div>
+
+            {/* Events List Section */}
+            <div className="mt-8 bg-surface rounded-2xl shadow-sm border border-border overflow-hidden">
+                <div className="p-6 border-b border-border bg-gray-50">
+                    <h2 className="text-xl font-bold text-text-primary">All Events</h2>
+                    <p className="text-sm text-text-secondary mt-1">Complete list of scheduled events</p>
+                </div>
+
+                <div className="p-6">
+                    {!events || events.length === 0 ? (
+                        <div className="text-center py-12">
+                            <Calendar size={48} className="mx-auto text-text-tertiary mb-4" />
+                            <p className="text-text-secondary">No events scheduled yet</p>
+                            <button
+                                onClick={() => { setSelectedDate(new Date()); setIsModalOpen(true); }}
+                                className="mt-4 text-primary hover:underline font-medium"
+                            >
+                                Create your first event
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {[...events]
+                                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                                .map(event => {
+                                    const eventDate = new Date(event.date);
+                                    const isUpcoming = eventDate >= new Date(new Date().setHours(0, 0, 0, 0));
+                                    const isPast = !isUpcoming;
+                                    const canDelete = userRole === 'Chair' || userRole === 'Vice Chair' || userRole === 'Admin';
+
+                                    console.log('User role:', userRole, 'Can delete:', canDelete);
+
+                                    return (
+                                        <div
+                                            key={event.id}
+                                            className={clsx(
+                                                "border border-border rounded-xl p-4 transition-all hover:shadow-md",
+                                                isPast && "opacity-60"
+                                            )}
+                                        >
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <span
+                                                            className={clsx(
+                                                                "px-3 py-1 rounded-md text-xs font-semibold uppercase tracking-wide",
+                                                                event.type === 'meeting' ? "bg-blue-100 text-blue-700" :
+                                                                    event.type === 'deadline' ? "bg-red-100 text-red-700" :
+                                                                        "bg-green-100 text-green-700"
+                                                            )}
+                                                        >
+                                                            {event.type}
+                                                        </span>
+                                                        {isPast && (
+                                                            <span className="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
+                                                                Past
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    <h3 className="text-lg font-bold text-text-primary mb-2">
+                                                        {event.title}
+                                                    </h3>
+
+                                                    <div className="flex items-center gap-4 text-sm text-text-secondary mb-3">
+                                                        <div className="flex items-center gap-1">
+                                                            <Clock size={16} />
+                                                            <span>
+                                                                {eventDate.toLocaleDateString('en-US', {
+                                                                    weekday: 'short',
+                                                                    year: 'numeric',
+                                                                    month: 'short',
+                                                                    day: 'numeric'
+                                                                })}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {event.description && (
+                                                        <p className="text-text-secondary text-sm">
+                                                            {event.description}
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                {canDelete && (
+                                                    <button
+                                                        onClick={(e) => handleDeleteEvent(event.id, e)}
+                                                        className="p-2 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors text-text-tertiary"
+                                                        title="Delete event"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                    )}
                 </div>
             </div>
 
