@@ -80,8 +80,8 @@ export function NavigationDock({ user }: NavigationDockProps) {
     };
 
     return (
-        <div className='fixed bottom-8 left-1/2 -translate-x-1/2 z-50'>
-            <Dock className='items-end pb-3 bg-white/70 dark:bg-black/70 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl px-4'>
+        <div className='fixed bottom-8 left-1/2 -translate-x-1/2 z-50 max-w-[95vw] w-fit'>
+            <Dock className='items-end pb-3 bg-white/70 dark:bg-black/70 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl px-4 overflow-x-auto touch-pan-x custom-scrollbar-hide'>
                 {navItems.map((item) => {
                     const isActive = pathname === item.href;
                     return (

@@ -323,5 +323,24 @@ export const db = {
             if (error) throw error;
             return data;
         }
+    },
+    permissions: {
+        findAll: async () => {
+            const { data, error } = await supabase.from('permission_settings').select('*');
+            if (error) {
+                console.error('Error fetching permissions:', error);
+                return [];
+            }
+            return data || [];
+        },
+        update: async (action_key: string, allowed_roles: string[]) => {
+            const { data, error } = await supabase
+                .from('permission_settings')
+                .upsert({ action_key, allowed_roles })
+                .select()
+                .single();
+            if (error) throw error;
+            return data;
+        }
     }
 };

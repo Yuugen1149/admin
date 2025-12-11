@@ -1,12 +1,13 @@
 "use client";
 
 import { StatCard } from "@/components/StatCard";
-import { Users, Calendar, Activity, PieChart, Plus, UserPlus, Send, FileText, Lock } from "lucide-react";
+import { Users, Calendar, Activity, PieChart, Plus, UserPlus, Send, FileText, Lock, Clock, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { NotificationsDropdown } from "@/components/NotificationsDropdown";
 import { GlowingEffect } from "@/components/ui/glowing-effect";
 import { useEffect, useState } from "react";
 import { MemberModal } from "@/components/MemberModal";
+import clsx from "clsx";
 
 const BudgetStatus = () => {
   const [budget, setBudget] = useState<{ total: number, remaining: number } | null>(null);
@@ -36,7 +37,11 @@ export default function Home() {
     active_projects: '5'
   });
 
+  const [permissions, setPermissions] = useState<any[]>([]);
+
   const canEdit = ['chair', 'vice chair', 'secretary', 'admin'].includes(user.role?.toLowerCase());
+
+  const [recentEvents, setRecentEvents] = useState<any[]>([]);
 
   useEffect(() => {
     // Get User Info
@@ -63,12 +68,46 @@ export default function Home() {
         }
       })
       .catch(err => console.error("Metrics fetch error", err));
+
+    // Fetch Recent Events
+    fetch('/api/events')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const now = new Date();
+          const upcoming = data
+            .filter((e: any) => new Date(e.date) >= now || new Date(e.date).toDateString() === now.toDateString())
+            .sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            .slice(0, 3);
+          setRecentEvents(upcoming);
+        }
+      })
+      .catch(err => console.error("Events fetch error", err));
+
+    // Fetch Permissions
+    fetch('/api/settings/permissions')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setPermissions(data);
+        }
+      })
+      .catch(err => console.error("Permissions fetch error", err));
   }, []);
+
+  const hasPermission = (action: string) => {
+    // Chair always has permission in this logic, or we can rely solely on DB
+    if (user.role?.toLowerCase() === 'chair') return true;
+
+    const perm = permissions.find(p => p.action_key === action);
+    if (!perm) return false;
+    return perm.allowed_roles?.includes(user.role?.toLowerCase());
+  };
 
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
 
   const handleEdit = async (field: keyof typeof metrics, currentVal: string) => {
-    if (!canEdit) return;
+    if (!hasPermission('edit_metrics')) return;
     const newVal = prompt(`Update ${field.replace('_', ' ')}:`, currentVal);
     if (newVal !== null && newVal !== currentVal) {
       try {
@@ -102,6 +141,30 @@ export default function Home() {
     }
   };
 
+  const handleDeleteEvent = async (id: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!hasPermission('delete_events')) {
+      alert("You do not have permission to delete events.");
+      return;
+    }
+
+    if (!confirm("Are you sure you want to delete this event?")) return;
+
+    try {
+      const res = await fetch(`/api/events/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setRecentEvents(prev => prev.filter(ev => ev.id !== id));
+      } else {
+        alert("Failed to delete event");
+      }
+    } catch (err) {
+      console.error("Failed to delete event", err);
+      alert("Error deleting event");
+    }
+  };
+
   const handleAddMemberSubmit = async (data: any) => {
     const res = await fetch('/api/members', {
       method: 'POST',
@@ -123,7 +186,7 @@ export default function Home() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       {/* Header */}
       <header className="flex justify-between items-start mb-8">
         <div>
@@ -150,7 +213,7 @@ export default function Home() {
           isPositive={true}
           icon={Users}
           iconBgClass="bg-gradient-to-br from-[#667EEA] to-[#764BA2]"
-          onEdit={canEdit ? () => handleEdit('total_members', metrics.total_members) : undefined}
+          onEdit={hasPermission('edit_metrics') ? () => handleEdit('total_members', metrics.total_members) : undefined}
         />
         <StatCard
           label="Upcoming Events"
@@ -159,7 +222,7 @@ export default function Home() {
           isPositive={false}
           icon={Calendar}
           iconBgClass="bg-gradient-to-br from-[#F093FB] to-[#F5576C]"
-          onEdit={canEdit ? () => handleEdit('upcoming_events', metrics.upcoming_events) : undefined}
+          onEdit={hasPermission('edit_metrics') ? () => handleEdit('upcoming_events', metrics.upcoming_events) : undefined}
         />
         <StatCard
           label="Active Projects"
@@ -168,7 +231,7 @@ export default function Home() {
           isPositive={true}
           icon={Activity}
           iconBgClass="bg-gradient-to-br from-[#4FACFE] to-[#00F2FE]"
-          onEdit={canEdit ? () => handleEdit('active_projects', metrics.active_projects) : undefined}
+          onEdit={hasPermission('edit_metrics') ? () => handleEdit('active_projects', metrics.active_projects) : undefined}
         />
         <StatCard
           label="Budget Utilized"
@@ -200,95 +263,123 @@ export default function Home() {
               <Link href="/events" className="text-sm font-medium text-primary hover:underline">View All</Link>
             </div>
             <div className="p-6 flex flex-col gap-4">
-              {/* Activity Items */}
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-[#E0E7FF] flex items-center justify-center text-[#4F46E5] shrink-0">
-                  <Calendar size={18} />
-                </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-text-primary mb-1">Tech Talk 2024</div>
-                  <div className="text-xs text-text-secondary">Tomorrow at 10:00 AM</div>
-                </div>
-                <div className="px-3 py-1 rounded-md text-xs font-semibold bg-[#E0E7FF] text-[#4F46E5]">Upcoming</div>
-              </div>
+              {recentEvents.length > 0 ? (
+                recentEvents.map(event => (
+                  <div key={event.id} className="flex items-center gap-4 group">
+                    <div className={clsx(
+                      "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
+                      event.type === 'meeting' ? "bg-blue-100 text-blue-700" :
+                        event.type === 'deadline' ? "bg-red-100 text-red-700" :
+                          "bg-green-100 text-green-700"
+                    )}>
+                      {event.type === 'meeting' ? <Users size={18} /> :
+                        event.type === 'deadline' ? <Clock size={18} /> :
+                          <Calendar size={18} />}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-text-primary mb-1">{event.title}</div>
+                      <div className="text-xs text-text-secondary">
+                        {new Date(event.date).toLocaleDateString(undefined, { weekday: 'long', hour: 'numeric', minute: 'numeric' })}
+                      </div>
+                    </div>
 
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-[#FEF3C7] flex items-center justify-center text-[#D97706] shrink-0">
-                  <Activity size={18} />
-                </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-text-primary mb-1">Workshop Planning</div>
-                  <div className="text-xs text-text-secondary">In Progress</div>
-                </div>
-                <div className="px-3 py-1 rounded-md text-xs font-semibold bg-[#FEF3C7] text-[#D97706]">In Progress</div>
-              </div>
+                    {/* Status Badge */}
+                    <div className={clsx(
+                      "px-3 py-1 rounded-md text-xs font-semibold",
+                      !hasPermission('delete_events') && (
+                        event.type === 'meeting' ? "bg-blue-100 text-blue-700" :
+                          event.type === 'deadline' ? "bg-red-100 text-red-700" :
+                            "bg-green-100 text-green-700"
+                      ),
+                      hasPermission('delete_events') && "group-hover:hidden", // Hide badge on hover if editable
+                      hasPermission('delete_events') && (
+                        event.type === 'meeting' ? "bg-blue-100 text-blue-700" :
+                          event.type === 'deadline' ? "bg-red-100 text-red-700" :
+                            "bg-green-100 text-green-700"
+                      )
+                    )}>
+                      {event.type}
+                    </div>
 
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-[#D1FAE5] flex items-center justify-center text-[#059669] shrink-0">
-                  <Users size={18} />
+                    {/* Delete Button (Only visible on hover if canEdit) */}
+                    {hasPermission('delete_events') && (
+                      <button
+                        onClick={(e) => handleDeleteEvent(event.id, e)}
+                        className="hidden group-hover:flex p-2 hover:bg-red-50 text-text-tertiary hover:text-red-500 rounded-lg transition-colors"
+                        title="Delete Event"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-text-secondary">
+                  <p>No upcoming events ordered.</p>
+                  <Link href="/events" className="text-primary text-sm hover:underline mt-2 inline-block">Schedule one?</Link>
                 </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-text-primary mb-1">New Member Orientation</div>
-                  <div className="text-xs text-text-secondary">Completed yesterday</div>
-                </div>
-                <div className="px-3 py-1 rounded-md text-xs font-semibold bg-[#D1FAE5] text-[#059669]">Completed</div>
-              </div>
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Quick Actions */}
-        <div className="relative rounded-2xl">
-          <GlowingEffect
-            disabled={false}
-            glow={true}
-            proximity={64}
-            spread={40}
-            inactiveZone={0.01}
-            borderWidth={2}
-            movementDuration={1.5}
-            borderRadius="rounded-2xl"
-          />
-          <div className="relative bg-surface rounded-2xl shadow-md p-6">
-            <h3 className="text-lg font-bold text-text-primary mb-4 p-2 border-b border-border">Quick Actions</h3>
-            <div className="grid gap-3">
-              <div
-                onClick={() => {
-                  if (canEdit) setIsAddMemberOpen(true);
-                }}
-                className={`flex items-center gap-3 p-4 border border-border rounded-xl bg-surface transition-all text-text-primary font-medium ${canEdit
-                  ? "hover:bg-background hover:border-primary cursor-pointer"
-                  : "opacity-60 cursor-not-allowed"
-                  }`}
-              >
-                {canEdit ? (
-                  <UserPlus size={20} className="text-text-secondary" />
+          {/* Quick Actions */}
+          <div className="relative rounded-2xl">
+            <GlowingEffect
+              disabled={false}
+              glow={true}
+              proximity={64}
+              spread={40}
+              inactiveZone={0.01}
+              borderWidth={2}
+              movementDuration={1.5}
+              borderRadius="rounded-2xl"
+            />
+            <div className="relative bg-surface rounded-2xl shadow-md p-6">
+              <h3 className="text-lg font-bold text-text-primary mb-4 p-2 border-b border-border">Quick Actions</h3>
+              <div className="grid gap-3">
+                <div
+                  onClick={() => {
+                    if (hasPermission('add_members')) setIsAddMemberOpen(true);
+                  }}
+                  className={`flex items-center gap-3 p-4 border border-border rounded-xl bg-surface transition-all text-text-primary font-medium ${hasPermission('add_members')
+                    ? "hover:bg-background hover:border-primary cursor-pointer"
+                    : "opacity-60 cursor-not-allowed"
+                    }`}
+                >
+                  {hasPermission('add_members') ? (
+                    <UserPlus size={20} className="text-text-secondary" />
+                  ) : (
+                    <Lock size={20} className="text-text-secondary" />
+                  )}
+                  Add Member
+                </div>
+                {hasPermission('create_event') ? (
+                  <Link href="/events" className="flex items-center gap-3 p-4 border border-border rounded-xl bg-surface hover:bg-background hover:border-primary transition-all text-text-primary font-medium cursor-pointer">
+                    <Calendar size={20} className="text-text-secondary" />
+                    Create Event
+                  </Link>
                 ) : (
-                  <Lock size={20} className="text-text-secondary" />
+                  <div className="flex items-center gap-3 p-4 border border-border rounded-xl bg-surface opacity-60 cursor-not-allowed text-text-primary font-medium">
+                    <Lock size={20} className="text-text-secondary" />
+                    Create Event
+                  </div>
                 )}
-                Add Member
+                <Link href="/announcements" className="flex items-center gap-3 p-4 border border-border rounded-xl bg-surface hover:bg-background hover:border-primary transition-all text-text-primary font-medium cursor-pointer">
+                  <Send size={20} className="text-text-secondary" />
+                  Send Announcement
+                </Link>
+                <Link href="/reports" className="flex items-center gap-3 p-4 border border-border rounded-xl bg-surface hover:bg-background hover:border-primary transition-all text-text-primary font-medium cursor-pointer">
+                  <FileText size={20} className="text-text-secondary" />
+                  Generate Report
+                </Link>
               </div>
-              <Link href="/events" className="flex items-center gap-3 p-4 border border-border rounded-xl bg-surface hover:bg-background hover:border-primary transition-all text-text-primary font-medium cursor-pointer">
-                <Calendar size={20} className="text-text-secondary" />
-                Create Event
-              </Link>
-              <Link href="/announcements" className="flex items-center gap-3 p-4 border border-border rounded-xl bg-surface hover:bg-background hover:border-primary transition-all text-text-primary font-medium cursor-pointer">
-                <Send size={20} className="text-text-secondary" />
-                Send Announcement
-              </Link>
-              <Link href="/reports" className="flex items-center gap-3 p-4 border border-border rounded-xl bg-surface hover:bg-background hover:border-primary transition-all text-text-primary font-medium cursor-pointer">
-                <FileText size={20} className="text-text-secondary" />
-                Generate Report
-              </Link>
             </div>
           </div>
-        </div>
-      </div>
-      <MemberModal
-        isOpen={isAddMemberOpen}
-        onClose={() => setIsAddMemberOpen(false)}
-        onSubmit={handleAddMemberSubmit}
-      />
-    </div>
-  );
+          <MemberModal
+            isOpen={isAddMemberOpen}
+            onClose={() => setIsAddMemberOpen(false)}
+            onSubmit={handleAddMemberSubmit}
+          />
+        </div >
+        );
 }

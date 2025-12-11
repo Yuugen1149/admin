@@ -77,4 +77,15 @@ body {
     @apply -translate-y-[2px] shadow-lg;
     background-color: var(--primary-hover);
   }
+
+  .custom-scrollbar-hide {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+
+  .custom-scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }

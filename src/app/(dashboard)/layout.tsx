@@ -15,7 +15,7 @@ export default async function DashboardLayout({
     return (
         <div className="min-h-screen bg-background pb-32">
             <NavigationDock user={user} />
-            <main className="container mx-auto">
+            <main className="container mx-auto px-4 md:px-0">
                 {children}
             </main>
         </div>
