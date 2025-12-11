@@ -47,10 +47,19 @@ export async function POST(request: Request) {
 
         // RBAC Check
         const cookieStore = await cookies();
-        const userRole = cookieStore.get("user_role")?.value?.toLowerCase() || "";
-        const authorizedRoles = ['chair', 'vice chair', 'secretary', 'admin'];
+        const userRole = cookieStore.get("user_role")?.value?.toLowerCase().trim() || "";
 
-        if (!authorizedRoles.includes(userRole)) {
+        // Check Permissions
+        let hasAccess = ['chair', 'admin'].includes(userRole);
+        if (!hasAccess) {
+            const permissions = await db.permissions.findAll();
+            const perm = permissions.find((p: any) => p.action_key === 'add_members');
+            if (perm && perm.allowed_roles.includes(userRole)) {
+                hasAccess = true;
+            }
+        }
+
+        if (!hasAccess) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
         }
 

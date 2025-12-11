@@ -8,12 +8,21 @@ export async function DELETE(
 ) {
     try {
         const cookieStore = await cookies();
-        const userRole = cookieStore.get("user_role")?.value;
+        const userRole = cookieStore.get("user_role")?.value?.toLowerCase().trim() || '';
 
-        // Only Chair, Vice Chair, and Admin can delete events
-        if (userRole !== 'Chair' && userRole !== 'Vice Chair' && userRole !== 'Admin') {
+        // Check Permissions
+        let hasAccess = ['chair', 'admin'].includes(userRole);
+        if (!hasAccess) {
+            const permissions = await db.permissions.findAll();
+            const perm = permissions.find((p: any) => p.action_key === 'delete_events');
+            if (perm && perm.allowed_roles.includes(userRole)) {
+                hasAccess = true;
+            }
+        }
+
+        if (!hasAccess) {
             return NextResponse.json(
-                { error: 'Unauthorized. Only Chair, Vice Chair, and Admin can delete events.' },
+                { error: 'Unauthorized. Only authorized roles can delete events.' },
                 { status: 403 }
             );
         }
