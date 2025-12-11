@@ -96,12 +96,15 @@ export default function Home() {
   }, []);
 
   const hasPermission = (action: string) => {
-    // Chair always has permission in this logic, or we can rely solely on DB
-    if (user.role?.toLowerCase() === 'chair') return true;
+    const normalize = (r: string) => r?.toLowerCase().trim() || '';
+    const currentRole = normalize(user.role);
+
+    // Chair always has permission in this logic
+    if (currentRole === 'chair') return true;
 
     const perm = permissions.find(p => p.action_key === action);
     if (!perm) return false;
-    return perm.allowed_roles?.includes(user.role?.toLowerCase());
+    return perm.allowed_roles?.some((r: string) => normalize(r) === currentRole);
   };
 
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);

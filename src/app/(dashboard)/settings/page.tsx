@@ -25,6 +25,12 @@ export default function SettingsPage() {
             </header>
 
             <div className="space-y-8">
+                {/* Debug Banner - Temporary */}
+                <div className="bg-yellow-100 border border-yellow-200 text-yellow-800 p-4 rounded-lg">
+                    <p className="font-bold">Debug Info:</p>
+                    <p>Detected Role (Cookie): "{decodeURIComponent(document.cookie.split('; ').find(row => row.startsWith('user_role='))?.split('=')[1] || '')}"</p>
+                    <p>Normalized Role: "{decodeURIComponent(document.cookie.split('; ').find(row => row.startsWith('user_role='))?.split('=')[1] || '').toLowerCase().trim()}"</p>
+                </div>
 
                 {/* Appearance Section */}
                 <section className="bg-surface p-6 rounded-2xl shadow-sm border border-border">
@@ -108,7 +114,7 @@ function PermissionsSection() {
             const parts = value.split(`; ${name}=`);
             if (parts.length === 2) return parts.pop()?.split(';').shift();
         };
-        const role = decodeURIComponent(getCookie("user_role") || "").toLowerCase();
+        const role = decodeURIComponent(getCookie("user_role") || "").toLowerCase().trim();
         setUserRole(role);
 
         if (role === 'chair') {

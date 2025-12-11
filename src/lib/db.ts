@@ -99,6 +99,13 @@ export const db = {
                 .update({ status })
                 .eq('id', id);
             if (error) throw error;
+        },
+        update: async (id: number, updates: any): Promise<void> => {
+            const { error } = await supabase
+                .from('members')
+                .update(updates)
+                .eq('id', id);
+            if (error) throw error;
         }
     },
     messages: {
